@@ -6,3 +6,6 @@ python-dotenv
 langchain-google-genai
 langchain-google-community[calendar]
 notion-client
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
