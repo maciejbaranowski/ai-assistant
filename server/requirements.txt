@@ -5,3 +5,4 @@ httpx
 python-dotenv
 langchain-google-genai
 langchain-google-community[calendar]
+notion-client
