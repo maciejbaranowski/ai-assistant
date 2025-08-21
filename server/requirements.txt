@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+langchain
+httpx
+python-dotenv
+langchain-google-genai
+langchain-google-community[calendar]
