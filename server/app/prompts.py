@@ -13,26 +13,59 @@ gemini = ChatGoogleGenerativeAI(
 def invoke_data_extraction_prompt(message: str):
     return gemini.invoke(
         f"""
-Przeanalizuj wiadomość i zwróć informacje o spotkaniach, wydarzeniach, zadaniach. Odpowiadaj wyłącznie w formacie JSON, w formie tablicy rekordów z polami:
+Przeanalizuj wiadomość i zwróć informacje zawarte w treści w ustrukturyzowany sposób wyłącznie w formacie JSON, w formie rekordu z polami: tasks, events, notes, shopping_lists.
+Każdy z tych rekordów powinien być listą obiektów, gdzie każdy obiekt zawiera następujące pola:
+Dla tasks:
+- title: tytuł zadania
+- description: opis zadania
+- due_date: data wykonania zadania, jeśli nie da się określić, załóż że zadanie jest do wykonania na jutro.
+Dla notes:
+- title: tytuł notatki
+- content: treść notatki
+Dla shopping_lists:
+- content: lista przedmiotów do kupienia, w formie nienumerowanej listy podzielonej na kategorie. Zwróć uwagę żeby uwzględnić wszystkie wspomniane w komunikacie pozycje
+Dla events:
 - title: tytuł wydarzenia
 - description: opis wydarzenia
 - start_datetime: data i czas rozpoczęcia
 - end_datetime: data i czas zakończenia. Jeśli nie da się określić, załóż że wydarzenie trwa 1 godzinę.
+
 Bierz pod uwagę że dziś jest {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, wszystkie wydarzenia powinny być w przyszłości, nie mogą być w przeszłości.
 Przykład odpowiedzi:
-[
-    {{
-        "title": "Spotkanie z klientem",
-        "description": "Omówienie projektu",
-        "start_datetime": "2025-09-11 12:00:00",
-        "end_datetime": "2025-09-11 13:00:00"
-    }},
-    {{
-        "title": "Zadanie do wykonania",
-        "description": "Przygotowanie raportu",
-        "start_datetime": "2025-09-11 15:00:00",
-        "end_datetime": "2025-09-11 16:00:00"
-    }}
-]
+{{
+    tasks: [
+        {{
+            "title": "Zadanie 1",
+            "description": "Opis zadania 1",
+            "due_date": "2025-09-10"
+        }}
+    ],
+    notes: [
+        {{
+            "title": "Notatka 1",
+            "content": "Treść notatki 1"
+        }}
+    ],
+    shopping_lists: [
+        {{
+            "content": "Nabiał\n - Mleko\n - Jogurt naturalny\n - Jajka\nOwoce\n - Jabłka\n - Banany\n - Pomarańcze"
+        }}
+    ],
+    events: [
+        {{
+            "title": "Spotkanie z klientem",
+            "description": "Omówienie projektu",
+            "start_datetime": "2025-09-11 12:00:00",
+            "end_datetime": "2025-09-11 13:00:00"
+        }},
+        {{
+            "title": "Zadanie do wykonania",
+            "description": "Przygotowanie raportu",
+            "start_datetime": "2025-09-11 15:00:00",
+            "end_datetime": "2025-09-11 16:00:00"
+        }}
+    ]
+}}
+Zwróć uwagę, żeby odpowiedź była poprawnym JSON-em
 
 Treść wiadomości: {message}""")
