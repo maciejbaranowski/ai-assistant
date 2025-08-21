@@ -8,6 +8,7 @@ from datetime import datetime
 from .notionConnector import create_notion_page
 from .prompts import invoke_data_extraction_prompt
 from .googleCalendarConnector import create_calendar_event
+from .googleTasksConnector import create_google_task
 
 load_dotenv()
 
@@ -49,14 +50,55 @@ def gemini_endpoint(
 
     data = extract_data_from_message(message)
     responses = []
+    
+    # Process tasks - create Google Tasks
+    for task in data.get("tasks", []):
+        task_response = create_google_task(task)
+        responses.append({
+            "type": "google_task",
+            "data": task,
+            "response": task_response
+        })
+    
+    # Process events - create Google Calendar events
     for event in data.get("events", []):
-        responses.append(create_calendar_event(event))
+        event_response = create_calendar_event(event)
+        responses.append({
+            "type": "google_calendar",
+            "data": event,
+            "response": event_response
+        })
+    
+    # Process notes - create Notion pages
     for note in data.get("notes", []):
-        responses.append(create_notion_page(note))
+        note_response = create_notion_page(note)
+        responses.append({
+            "type": "notion_page",
+            "data": note,
+            "response": note_response
+        })
+    
+    # Process shopping lists - create Notion pages
     for shopping_list in data.get("shopping_lists", []):
-        responses.append(create_notion_page({
+        shopping_data = {
             "title": f"Lista zakupów {datetime.now().strftime('%m-%d')}",
             "content": shopping_list.get("content", "No content")
-        }))
+        }
+        shopping_response = create_notion_page(shopping_data)
+        responses.append({
+            "type": "notion_shopping_list",
+            "data": shopping_list,
+            "response": shopping_response
+        })
 
-    return {"gemini":data,"integrations":responses}
+    return {
+        "success": True,
+        "gemini_parsed_data": data,
+        "integrations": responses,
+        "summary": {
+            "tasks_created": len(data.get("tasks", [])),
+            "events_created": len(data.get("events", [])),
+            "notes_created": len(data.get("notes", [])),
+            "shopping_lists_created": len(data.get("shopping_lists", []))
+        }
+    }
