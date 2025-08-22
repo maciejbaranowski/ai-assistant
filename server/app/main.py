@@ -93,33 +93,34 @@ def gemini_endpoint(
         })
 
     for response in responses:
+        responseData = response.get("response", {})
         if response.get("type") == "google_task":
             send_ntfy_notification(
                 title="Nowe zadanie w Google Tasks",
                 message=f'Zadanie "{response.get("data", {}).get("title", "bez tytułu")}" zostało utworzone.',
                 tags=["white_check_mark"],
-                actions=[f'view, Otwórz zadanie, {response.get("response", {}).get("webViewLink", "")}']
+                actions=[f'view, Otwórz zadanie, {responseData.get("webViewLink", "")}']
             )
         elif response.get("type") == "google_calendar":
             send_ntfy_notification(
                 title="Nowe wydarzenie w Kalendarzu Google",
                 message=f'Wydarzenie "{response.get("data", {}).get("title", "bez tytułu")}" zostało utworzone na {response.get("data", {}).get("start_datetime", "nieznana data")}.',
                 tags=["calendar"],
-                actions=[f'view, Otwórz wydarzenie, {response.get("response", {}).get("htmlLink", "")}']
+                actions=[f'view, Otwórz wydarzenie, {responseData.get("link", "")}']
             )
         elif response.get("type") == "notion_page":
             send_ntfy_notification(
                 title="Nowa strona w Notion",
                 message=f'Notatka "{response.get("data", {}).get("title", "bez tytułu")}" została utworzona.',
                 tags=["notebook_with_decorative_cover"],
-                actions=[f'view, Otwórz stronę, {response.get("response", {}).get("url", "")}']
+                actions=[f'view, Otwórz stronę, {responseData.get("url", "")}']
             )
         elif response.get("type") == "notion_shopping_list":
             send_ntfy_notification(
                 title="Nowa lista zakupów w Notion",
                 message=f'Lista zakupów "{response.get("data", {}).get("title", "bez tytułu")}" została utworzona.',
                 tags=["shopping_trolley"],
-                actions=[f'view, Otwórz listę, {response.get("response", {}).get("url", "")}']
+                actions=[f'view, Otwórz listę, {responseData.get("url", "")}']
             )
 
     return {
