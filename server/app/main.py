@@ -3,13 +3,10 @@ from fastapi import Body, FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from langchain_google_community import CalendarToolkit
-from datetime import datetime
 
-from .integrations.notionConnector import create_notion_page
 from .prompts import invoke_data_extraction_prompt
-from .integrations.googleCalendarConnector import create_calendar_event
-from .integrations.googleTasksConnector import create_google_task
-from .integrations.ntfyConnector import send_ntfy_notification
+from .processing import process_tasks, process_events, process_notes, process_shopping_lists
+from .notifications import send_notifications
 
 load_dotenv()
 
@@ -35,10 +32,16 @@ def extract_data_from_message(message: str):
     response = invoke_data_extraction_prompt(message) 
     if not response or not response.content:
         raise HTTPException(status_code=500, detail="No response from Gemini")
+    
+    token_usage = response.usage_metadata
+    total_tokens = token_usage.get('total_tokens', 0) if token_usage else 0
+
     match = re.search(r"\{.*\}", response.content, re.DOTALL)
     if not match:
         raise HTTPException(status_code=500, detail="Could not find JSON array in Gemini response")
-    return json.loads(match.group(0))
+    
+    json_data = json.loads(match.group(0))
+    return json_data, total_tokens
 
 @app.post("/gemini")
 def gemini_endpoint(
@@ -49,88 +52,30 @@ def gemini_endpoint(
     if not message:
         raise HTTPException(status_code=400, detail="Missing 'message' in request body")
 
-    data = extract_data_from_message(message)
-    responses = []
+    data, total_tokens = extract_data_from_message(message)
     
-    # Process tasks - create Google Tasks
-    for task in data.get("tasks", []):
-        task_response = create_google_task(task)
-        responses.append({
-            "type": "google_task",
-            "data": task,
-            "response": task_response
-        })
-    
-    # Process events - create Google Calendar events
-    for event in data.get("events", []):
-        event_response = create_calendar_event(event)
-        responses.append({
-            "type": "google_calendar",
-            "data": event,
-            "response": event_response
-        })
-    
-    # Process notes - create Notion pages
-    for note in data.get("notes", []):
-        note_response = create_notion_page(note)
-        responses.append({
-            "type": "notion_page",
-            "data": note,
-            "response": note_response
-        })
-    
-    # Process shopping lists - create Notion pages
-    for shopping_list in data.get("shopping_lists", []):
-        shopping_data = {
-            "title": f"Lista zakupów {datetime.now().strftime('%m-%d')}",
-            "content": shopping_list.get("content", "No content")
-        }
-        shopping_response = create_notion_page(shopping_data)
-        responses.append({
-            "type": "notion_shopping_list",
-            "data": shopping_data,
-            "response": shopping_response
-        })
+    tasks = data.get("tasks", [])
+    events = data.get("events", [])
+    notes = data.get("notes", [])
+    shopping_lists = data.get("shopping_lists", [])
 
-    for response in responses:
-        responseData = response.get("response", {})
-        if response.get("type") == "google_task":
-            send_ntfy_notification(
-                title="Nowe zadanie w Google Tasks",
-                message=f'Zadanie "{response.get("data", {}).get("title", "bez tytułu")}" zostało utworzone.',
-                tags=["white_check_mark"],
-                actions=[f'view, Otwórz zadanie, {responseData.get("webViewLink", "")}']
-            )
-        elif response.get("type") == "google_calendar":
-            send_ntfy_notification(
-                title="Nowe wydarzenie w Kalendarzu Google",
-                message=f'Wydarzenie "{response.get("data", {}).get("title", "bez tytułu")}" zostało utworzone na {response.get("data", {}).get("start_datetime", "nieznana data")}.',
-                tags=["calendar"],
-                actions=[f'view, Otwórz wydarzenie, {responseData.get("link", "")}']
-            )
-        elif response.get("type") == "notion_page":
-            send_ntfy_notification(
-                title="Nowa strona w Notion",
-                message=f'Notatka "{response.get("data", {}).get("title", "bez tytułu")}" została utworzona.',
-                tags=["notebook_with_decorative_cover"],
-                actions=[f'view, Otwórz stronę, {responseData.get("url", "")}']
-            )
-        elif response.get("type") == "notion_shopping_list":
-            send_ntfy_notification(
-                title="Nowa lista zakupów w Notion",
-                message=f'Lista zakupów "{response.get("data", {}).get("title", "bez tytułu")}" została utworzona.',
-                tags=["shopping_trolley"],
-                actions=[f'view, Otwórz listę, {responseData.get("url", "")}']
-            )
+    responses = []
+    responses.extend(process_tasks(tasks))
+    responses.extend(process_events(events))
+    responses.extend(process_notes(notes))
+    responses.extend(process_shopping_lists(shopping_lists))
+
+    send_notifications(responses)
 
     return {
         "success": True,
         "gemini_parsed_data": data,
         "integrations": responses,
         "summary": {
-            "tasks_created": len(data.get("tasks", [])),
-            "events_created": len(data.get("events", [])),
-            "notes_created": len(data.get("notes", [])),
-            "shopping_lists_created": len(data.get("shopping_lists", []))
+            "tasks_created": len(tasks),
+            "events_created": len(events),
+            "notes_created": len(notes),
+            "shopping_lists_created": len(shopping_lists),
+            "total_tokens_used": total_tokens
         }
     }
