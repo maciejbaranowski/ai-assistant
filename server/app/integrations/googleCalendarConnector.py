@@ -1,7 +1,8 @@
 import os
+import re
 from dotenv import load_dotenv
 from langchain_google_community.calendar.create_event import CalendarCreateEvent
-from .auth_manager import auth_manager
+from ..auth_manager import auth_manager
 
 load_dotenv()
 
@@ -22,7 +23,7 @@ def create_calendar_event(data_item):
             'error': 'Calendar tool not initialized'
         }
     
-    return createCalendarEventTool.invoke(
+    result_string = createCalendarEventTool.invoke(
         {
             "calendar_id": CALENDAR_ID,
             "summary": data_item.get("title", "No Title"),
@@ -32,3 +33,13 @@ def create_calendar_event(data_item):
             "description": data_item.get("description", "No Description")
         }
     )
+    
+    # Extract URL using regex
+    match = re.search(r'\[here\]\((.*?)\)', result_string)
+    html_link = match.group(1) if match else None
+
+    return {
+        'success': True,
+        'htmlLink': html_link,
+        'event_data': result_string
+    }

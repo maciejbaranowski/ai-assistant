@@ -17,7 +17,7 @@ def create_notion_page(data: dict):
     title = data.get("title", "Untitled")
     content = data.get("content", "")
 
-    return notion.pages.create(
+    result = notion.pages.create(
         parent={"type": "page_id", "page_id": NOTION_PARENT_PAGE_ID},
         properties={
             "title": [
@@ -42,3 +42,8 @@ def create_notion_page(data: dict):
             }
         ]
     )
+    return {
+        'success': True,
+        'url': result.get('url'),
+        'page_data': result
+    }

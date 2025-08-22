@@ -20,11 +20,11 @@ def send_ntfy_notification(message: str, title: str = None, tags: list = None, a
     """
     headers = {}
     if title:
-        headers["Title"] = title
+        headers["Title"] = title.encode('utf-8')
     if tags:
         headers["Tags"] = ",".join(tags)
     if actions:
-        headers["Actions"] = "; ".join(actions)
+        headers["Actions"] = "; ".join(actions).encode('utf-8')
 
     response = requests.post(NTFY_URL, data=message.encode('utf-8'), headers=headers)
     return response

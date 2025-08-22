@@ -1,6 +1,6 @@
 from datetime import datetime
 from googleapiclient.discovery import build
-from .auth_manager import auth_manager
+from ..auth_manager import auth_manager
 
 class GoogleTasksService:    
     def __init__(self):
@@ -80,7 +80,8 @@ class GoogleTasksService:
                 'task_id': result.get('id'),
                 'title': result.get('title'),
                 'due': result.get('due'),
-                'status': result.get('status')
+                'status': result.get('status'),
+                'webViewLink': result.get('webViewLink')
             }
             
         except Exception as e:

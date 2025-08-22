@@ -88,34 +88,38 @@ def gemini_endpoint(
         shopping_response = create_notion_page(shopping_data)
         responses.append({
             "type": "notion_shopping_list",
-            "data": shopping_list,
+            "data": shopping_data,
             "response": shopping_response
         })
 
     for response in responses:
-        if response["type"] == "google_task":
+        if response.get("type") == "google_task":
             send_ntfy_notification(
                 title="Nowe zadanie w Google Tasks",
-                message=f'Zadanie "{response["data"]["title"]}" zostało utworzone.',
-                tags=["white_check_mark"]
+                message=f'Zadanie "{response.get("data", {}).get("title", "bez tytułu")}" zostało utworzone.',
+                tags=["white_check_mark"],
+                actions=[f'view, Otwórz zadanie, {response.get("response", {}).get("webViewLink", "")}']
             )
-        elif response["type"] == "google_calendar":
+        elif response.get("type") == "google_calendar":
             send_ntfy_notification(
                 title="Nowe wydarzenie w Kalendarzu Google",
-                message=f'Wydarzenie "{response["data"]["summary"]}" zostało utworzone na {response["data"]["start"]["dateTime"]}.',
-                tags=["calendar"]
+                message=f'Wydarzenie "{response.get("data", {}).get("title", "bez tytułu")}" zostało utworzone na {response.get("data", {}).get("start_datetime", "nieznana data")}.',
+                tags=["calendar"],
+                actions=[f'view, Otwórz wydarzenie, {response.get("response", {}).get("htmlLink", "")}']
             )
-        elif response["type"] == "notion_page":
+        elif response.get("type") == "notion_page":
             send_ntfy_notification(
                 title="Nowa strona w Notion",
-                message=f'Notatka "{response["data"]["title"]}" została utworzona.',
-                tags=["notebook_with_decorative_cover"]
+                message=f'Notatka "{response.get("data", {}).get("title", "bez tytułu")}" została utworzona.',
+                tags=["notebook_with_decorative_cover"],
+                actions=[f'view, Otwórz stronę, {response.get("response", {}).get("url", "")}']
             )
-        elif response["type"] == "notion_shopping_list":
+        elif response.get("type") == "notion_shopping_list":
             send_ntfy_notification(
                 title="Nowa lista zakupów w Notion",
-                message=f'Lista zakupów "{response["data"]["title"]}" została utworzona.',
-                tags=["shopping_trolley"]
+                message=f'Lista zakupów "{response.get("data", {}).get("title", "bez tytułu")}" została utworzona.',
+                tags=["shopping_trolley"],
+                actions=[f'view, Otwórz listę, {response.get("response", {}).get("url", "")}']
             )
 
     return {
