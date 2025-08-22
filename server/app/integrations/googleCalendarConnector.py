@@ -35,11 +35,11 @@ def create_calendar_event(data_item):
     )
     
     # Extract URL using regex
-    match = re.search(r'\[here\]\((.*?)\)', result_string)
-    html_link = match.group(1) if match else None
+    match = re.search(r'https?://[\S]+', result_string)
+    link = match.group(0) if match else None
 
     return {
         'success': True,
-        'htmlLink': html_link,
+        'link': link,
         'event_data': result_string
     }
