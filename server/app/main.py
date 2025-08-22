@@ -5,10 +5,11 @@ from dotenv import load_dotenv
 from langchain_google_community import CalendarToolkit
 from datetime import datetime
 
-from .notionConnector import create_notion_page
+from .integrations.notionConnector import create_notion_page
 from .prompts import invoke_data_extraction_prompt
-from .googleCalendarConnector import create_calendar_event
-from .googleTasksConnector import create_google_task
+from .integrations.googleCalendarConnector import create_calendar_event
+from .integrations.googleTasksConnector import create_google_task
+from .integrations.ntfyConnector import send_ntfy_notification
 
 load_dotenv()
 
@@ -90,6 +91,32 @@ def gemini_endpoint(
             "data": shopping_list,
             "response": shopping_response
         })
+
+    for response in responses:
+        if response["type"] == "google_task":
+            send_ntfy_notification(
+                title="Nowe zadanie w Google Tasks",
+                message=f'Zadanie "{response["data"]["title"]}" zostało utworzone.',
+                tags=["white_check_mark"]
+            )
+        elif response["type"] == "google_calendar":
+            send_ntfy_notification(
+                title="Nowe wydarzenie w Kalendarzu Google",
+                message=f'Wydarzenie "{response["data"]["summary"]}" zostało utworzone na {response["data"]["start"]["dateTime"]}.',
+                tags=["calendar"]
+            )
+        elif response["type"] == "notion_page":
+            send_ntfy_notification(
+                title="Nowa strona w Notion",
+                message=f'Notatka "{response["data"]["title"]}" została utworzona.',
+                tags=["notebook_with_decorative_cover"]
+            )
+        elif response["type"] == "notion_shopping_list":
+            send_ntfy_notification(
+                title="Nowa lista zakupów w Notion",
+                message=f'Lista zakupów "{response["data"]["title"]}" została utworzona.',
+                tags=["shopping_trolley"]
+            )
 
     return {
         "success": True,
