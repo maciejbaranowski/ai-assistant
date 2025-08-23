@@ -1,9 +1,6 @@
 
 import os
 import requests
-from dotenv import load_dotenv
-
-load_dotenv()
 
 NTFY_CHANNEL = os.getenv("NTFY_CHANNEL")
 NTFY_URL = f"https://ntfy.sh/{NTFY_CHANNEL}"

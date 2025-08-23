@@ -1,10 +1,7 @@
 import os
 import re
-from dotenv import load_dotenv
 from langchain_google_community.calendar.create_event import CalendarCreateEvent
 from ..auth_manager import auth_manager
-
-load_dotenv()
 
 CALENDAR_ID = os.getenv("CALENDAR_ID", "primary")
 

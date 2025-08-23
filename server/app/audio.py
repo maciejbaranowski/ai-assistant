@@ -5,6 +5,8 @@ import google.generativeai as genai
 from .processing import process_text_and_get_response
 from .integrations.notionConnector import create_notion_page
 
+genai.configure(api_key=os.getenv("GOOGLE_AI_API_KEY"))
+
 NOTION_TRANSCRIPTION_PAGE_ID = os.getenv("NOTION_TRANSCRIPTION_PAGE_ID")
 
 def process_audio(audio_bytes: bytes):

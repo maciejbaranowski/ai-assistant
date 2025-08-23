@@ -1,8 +1,5 @@
 import os
 from notion_client import Client
-from dotenv import load_dotenv
-
-load_dotenv()
 
 NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 

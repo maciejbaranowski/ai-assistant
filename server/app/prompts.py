@@ -3,9 +3,6 @@ import logging
 from datetime import datetime
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from dotenv import load_dotenv
-load_dotenv()
-
 gemini = ChatGoogleGenerativeAI(
     model=os.getenv("LANGCHAIN_MODEL", "gemini-2.5-flash"),
     google_api_key=os.getenv("GOOGLE_AI_API_KEY")
@@ -82,7 +79,7 @@ def extract_data_from_message(message: str):
     token_usage = response.usage_metadata
     total_tokens = token_usage.get('total_tokens', 0) if token_usage else 0
     logging.debug(f"Gemini response: {response.content}")
-    match = re.search(r"\{{.*\}}", response.content, re.DOTALL)
+    match = re.search(r"\{.*\}", response.content, re.DOTALL)
     if not match:
         logging.error("Could not find JSON array in Gemini response")
         raise ValueError("Could not find JSON array in Gemini response")
