@@ -3,13 +3,14 @@ from fastapi import Body, FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from .processing import process_text_and_get_response
 from .audio import process_audio
 from .auth import verify_token
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-load_dotenv()
 
 app = FastAPI()
 
