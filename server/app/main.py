@@ -9,6 +9,7 @@ import google.generativeai as genai
 
 from .processing import process_text_and_get_response
 from .integrations.notionConnector import create_notion_page
+from .audio import process_audio
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -72,36 +73,8 @@ async def audio_input(
         raise HTTPException(status_code=413, detail="Audio file is too large. Maximum size is 500KB (~5 minutes).")
 
     try:
-        # Use the Gemini 1.5 Flash model for fast transcription
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        
-        audio_file = {"mime_type": "audio/3gpp", "data": audio_bytes}
-        
-        response = model.generate_content(
-            ["Dokonaj transkrypcji tego pliku audio:", audio_file]
-        )
-        
-        transcription = response.text
-        logging.debug("Transcription successful.")
-
-        # Save transcription to Notion
-        if transcription:
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            notion_page_data = {
-                "title": f"Transcription - {now}",
-                "content": transcription
-            }
-            create_notion_page(notion_page_data, NOTION_TRANSCRIPTION_PAGE_ID)
-            logging.debug("Transcription saved to Notion.")
-
-            logging.debug("Processing transcription.")
-            response_data = process_text_and_get_response(transcription)
-            logging.debug("Finished processing transcription.")
-            return {"transcription": transcription, **response_data}
-        else:
-            logging.debug("Empty transcription, nothing to process.")
-            return {"transcription": ""}
-            
+        response_data = process_audio(audio_bytes)
+        return response_data
     except Exception as e:
-        logging.error(f"Gemini API error: {e}")
-        raise HTTPException(status_code=500, detail=f"Gemini API error: {e}")
+        logging.error(f"Error processing audio: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing audio: {e}")
