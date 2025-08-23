@@ -1,4 +1,5 @@
 import os, json, re
+import logging
 from datetime import datetime
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -11,6 +12,7 @@ gemini = ChatGoogleGenerativeAI(
 )
 
 def invoke_data_extraction_prompt(message: str):
+    logging.debug("Invoking data extraction prompt.")
     return gemini.invoke(
         f"""
 Przeanalizuj wiadomość i zwróć informacje zawarte w treści w ustrukturyzowany sposób wyłącznie w formacie JSON, w formie rekordu z polami: tasks, events, notes, shopping_lists.
@@ -71,20 +73,25 @@ Zwróć uwagę, żeby odpowiedź była poprawnym JSON-em
 Treść wiadomości: {message}""")
 
 def extract_data_from_message(message: str):
+    logging.debug("Extracting data from message.")
     response = invoke_data_extraction_prompt(message) 
     if not response or not response.content:
+        logging.error("No response from Gemini")
         raise ValueError("No response from Gemini")
     
     token_usage = response.usage_metadata
     total_tokens = token_usage.get('total_tokens', 0) if token_usage else 0
-    print(response.content)
-    match = re.search(r"\{.*\}", response.content, re.DOTALL)
+    logging.debug(f"Gemini response: {response.content}")
+    match = re.search(r"\{{.*\}}", response.content, re.DOTALL)
     if not match:
+        logging.error("Could not find JSON array in Gemini response")
         raise ValueError("Could not find JSON array in Gemini response")
     
     try:
         json_data = json.loads(match.group(0))
-    except json.JSONDecodeError:
+        logging.debug("Successfully extracted JSON data.")
+    except json.JSONDecodeError as e:
+        logging.error(f"Could not decode JSON from Gemini response: {e}")
         raise ValueError("Could not decode JSON from Gemini response")
         
     return json_data, total_tokens

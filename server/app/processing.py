@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime
 from .integrations.googleTasksConnector import create_google_task
 from .integrations.googleCalendarConnector import create_calendar_event
@@ -11,6 +12,7 @@ NOTION_NOTES_PAGE_ID = os.getenv("NOTION_NOTES_PAGE_ID")
 NOTION_SHOPPING_LIST_PAGE_ID = os.getenv("NOTION_SHOPPING_LIST_PAGE_ID")
 
 def process_tasks(tasks):
+    logging.debug(f"Processing {len(tasks)} tasks.")
     responses = []
     for task in tasks:
         task_response = create_google_task(task)
@@ -22,6 +24,7 @@ def process_tasks(tasks):
     return responses
 
 def process_events(events):
+    logging.debug(f"Processing {len(events)} events.")
     responses = []
     for event in events:
         event_response = create_calendar_event(event)
@@ -33,6 +36,7 @@ def process_events(events):
     return responses
 
 def process_notes(notes):
+    logging.debug(f"Processing {len(notes)} notes.")
     responses = []
     for note in notes:
         note_response = create_notion_page(note, NOTION_NOTES_PAGE_ID)
@@ -44,6 +48,7 @@ def process_notes(notes):
     return responses
 
 def process_shopping_lists(shopping_lists):
+    logging.debug(f"Processing {len(shopping_lists)} shopping lists.")
     responses = []
     for shopping_list in shopping_lists:
         shopping_data = {
@@ -59,6 +64,7 @@ def process_shopping_lists(shopping_lists):
     return responses
 
 def process_text_and_get_response(text: str):
+    logging.debug("Extracting data from text.")
     data, total_tokens = extract_data_from_message(text)
     
     tasks = data.get("tasks", [])
@@ -66,14 +72,17 @@ def process_text_and_get_response(text: str):
     notes = data.get("notes", [])
     shopping_lists = data.get("shopping_lists", [])
 
+    logging.debug("Processing extracted data.")
     responses = []
     responses.extend(process_tasks(tasks))
     responses.extend(process_events(events))
     responses.extend(process_notes(notes))
     responses.extend(process_shopping_lists(shopping_lists))
 
+    logging.debug("Sending notifications.")
     send_notifications(responses)
 
+    logging.debug("Finished processing.")
     return {
         "gemini_parsed_data": data,
         "integrations": responses,
