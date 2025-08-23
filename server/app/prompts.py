@@ -1,4 +1,4 @@
-import os
+import os, json, re
 from datetime import datetime
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -69,3 +69,22 @@ Przykład odpowiedzi:
 Zwróć uwagę, żeby odpowiedź była poprawnym JSON-em
 
 Treść wiadomości: {message}""")
+
+def extract_data_from_message(message: str):
+    response = invoke_data_extraction_prompt(message) 
+    if not response or not response.content:
+        raise ValueError("No response from Gemini")
+    
+    token_usage = response.usage_metadata
+    total_tokens = token_usage.get('total_tokens', 0) if token_usage else 0
+    print(response.content)
+    match = re.search(r"\{.*\}", response.content, re.DOTALL)
+    if not match:
+        raise ValueError("Could not find JSON array in Gemini response")
+    
+    try:
+        json_data = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        raise ValueError("Could not decode JSON from Gemini response")
+        
+    return json_data, total_tokens

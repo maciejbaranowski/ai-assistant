@@ -1,14 +1,19 @@
-import os, json, re
-from fastapi import Body, FastAPI, Depends, HTTPException, Header
+import os
+from datetime import datetime
+from fastapi import Body, FastAPI, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from langchain_google_community import CalendarToolkit
+import google.generativeai as genai
 
-from .prompts import invoke_data_extraction_prompt
-from .processing import process_tasks, process_events, process_notes, process_shopping_lists
-from .notifications import send_notifications
+from .processing import process_text_and_get_response
+from .integrations.notionConnector import create_notion_page
 
 load_dotenv()
+
+genai.configure(api_key=os.getenv("GOOGLE_AI_API_KEY"))
+AUTH_TOKEN_SECRET = os.getenv("AUTH_TOKEN_SECRET")
+NOTION_TRANSCRIPTION_PAGE_ID = os.getenv("NOTION_TRANSCRIPTION_PAGE_ID")
 
 app = FastAPI()
 
@@ -20,28 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-AUTH_TOKEN_SECRET = os.getenv("AUTH_TOKEN_SECRET")
-
 calendarToolkit = CalendarToolkit(token_path="token.json")
 
 def verify_token(x_auth: str = Header(..., alias="x-auth")):
     if x_auth != f"{AUTH_TOKEN_SECRET}":
         raise HTTPException(status_code=401, detail="Unauthorized")
-
-def extract_data_from_message(message: str):
-    response = invoke_data_extraction_prompt(message) 
-    if not response or not response.content:
-        raise HTTPException(status_code=500, detail="No response from Gemini")
-    
-    token_usage = response.usage_metadata
-    total_tokens = token_usage.get('total_tokens', 0) if token_usage else 0
-
-    match = re.search(r"\{.*\}", response.content, re.DOTALL)
-    if not match:
-        raise HTTPException(status_code=500, detail="Could not find JSON array in Gemini response")
-    
-    json_data = json.loads(match.group(0))
-    return json_data, total_tokens
 
 @app.post("/gemini")
 def gemini_endpoint(
@@ -52,30 +40,48 @@ def gemini_endpoint(
     if not message:
         raise HTTPException(status_code=400, detail="Missing 'message' in request body")
 
-    data, total_tokens = extract_data_from_message(message)
-    
-    tasks = data.get("tasks", [])
-    events = data.get("events", [])
-    notes = data.get("notes", [])
-    shopping_lists = data.get("shopping_lists", [])
+    try:
+        response_data = process_text_and_get_response(message)
+        return {"success": True, **response_data}
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    responses = []
-    responses.extend(process_tasks(tasks))
-    responses.extend(process_events(events))
-    responses.extend(process_notes(notes))
-    responses.extend(process_shopping_lists(shopping_lists))
+@app.post("/audio-input")
+async def audio_input(
+    request: Request,
+    token: None = Depends(verify_token)
+):
+    content_type = request.headers.get('content-type')
+    if not content_type == "audio/3gpp":
+        raise HTTPException(status_code=400, detail=f"Invalid content type: {content_type}. Only audio/3gpp is accepted.")
 
-    send_notifications(responses)
+    audio_bytes = await request.body()
 
-    return {
-        "success": True,
-        "gemini_parsed_data": data,
-        "integrations": responses,
-        "summary": {
-            "tasks_created": len(tasks),
-            "events_created": len(events),
-            "notes_created": len(notes),
-            "shopping_lists_created": len(shopping_lists),
-            "total_tokens_used": total_tokens
-        }
-    }
+    try:
+        # Use the Gemini 1.5 Flash model for fast transcription
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        
+        audio_file = {"mime_type": "audio/3gpp", "data": audio_bytes}
+        
+        response = model.generate_content(
+            ["Dokonaj transkrypcji tego pliku audio:", audio_file]
+        )
+        
+        transcription = response.text
+
+        # Save transcription to Notion
+        if transcription:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            notion_page_data = {
+                "title": f"Transcription - {now}",
+                "content": transcription
+            }
+            create_notion_page(notion_page_data, NOTION_TRANSCRIPTION_PAGE_ID)
+
+            response_data = process_text_and_get_response(transcription)
+            return {"transcription": transcription, **response_data}
+        else:
+            return {"transcription": ""}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini API error: {e}")

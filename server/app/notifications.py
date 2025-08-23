@@ -25,7 +25,7 @@ NOTIFICATION_TEMPLATES = {
     "notion_shopping_list": {
         "title": "Nowa lista zakupów w Notion",
         "message": 'Lista zakupów "{title}" została utworzona.',
-        "tags": ["shopping_trolley"],
+        "tags": ["shopping_cart"],
         "action_text": "Otwórz listę",
         "action_url_key": "url"
     }
