@@ -68,4 +68,27 @@ async def assistant_audio_command_endpoint(
         logging.error(f"Error processing audio: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing audio: {e}")
 
+@assistant_router.post("/audio-conversation")
+async def assistant_audio_conversation_endpoint(
+    request: Request
+):
+    logging.debug("Received new audio file for processing.")
+    content_type = request.headers.get('content-type')
+    if not content_type == "audio/3gpp":
+        logging.error(f"Invalid content type: {content_type}")
+        raise HTTPException(status_code=400, detail=f"Invalid content type: {content_type}. Only audio/3gpp is accepted.")
+
+    audio_bytes = await request.body()
+
+    if len(audio_bytes) > 3 * 1024 * 1024:
+        logging.error("Audio file is too large")
+        raise HTTPException(status_code=413, detail="Audio file is too large. Maximum size is 3MB (~30 minutes).")
+
+    try:
+        response_data = process_audio(audio_bytes)
+        return response_data
+    except Exception as e:
+        logging.error(f"Error processing audio: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing audio: {e}")
+
 app.include_router(assistant_router)
