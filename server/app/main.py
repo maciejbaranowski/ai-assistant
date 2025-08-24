@@ -1,5 +1,5 @@
 import logging
-from fastapi import Body, FastAPI, Depends, HTTPException, Request
+from fastapi import Body, FastAPI, Depends, HTTPException, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -22,9 +22,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/gemini")
-def gemini_endpoint(
-    token: None = Depends(verify_token),
+assistant_router = APIRouter(
+    prefix="/assistant",
+    dependencies=[Depends(verify_token)]
+)
+
+@assistant_router.post("/text-command")
+def assistant_text_command_endpoint(
     body: dict = Body(...)
 ):
     logging.debug("Received new message for processing.")
@@ -41,10 +45,9 @@ def gemini_endpoint(
         logging.error(f"Error processing message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/audio-input")
-async def audio_input(
-    request: Request,
-    token: None = Depends(verify_token)
+@assistant_router.post("/audio-command")
+async def assistant_audio_command_endpoint(
+    request: Request
 ):
     logging.debug("Received new audio file for processing.")
     content_type = request.headers.get('content-type')
@@ -64,3 +67,5 @@ async def audio_input(
     except Exception as e:
         logging.error(f"Error processing audio: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing audio: {e}")
+
+app.include_router(assistant_router)
