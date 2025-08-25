@@ -20,9 +20,12 @@ Dla tasks:
 - due_date: data wykonania zadania, jeśli nie da się określić, załóż że zadanie jest do wykonania na jutro.
 Dla notes:
 - title: tytuł notatki
-- content: treść notatki
+- content: treść notatki. Jeśli notatka jest długa, podziel ją na akapity. Jeśli notatka zawiera listy, zachowaj ich strukturę, używając myślników do oznaczenia punktów listy.
+  Jeśli notatka zawiera prośbę skierowaną do asystenta, spełnij ją, wypisz swoje wnioski w treści notatki w nawiasie kwadratowym [].
 Dla shopping_lists:
-- content: lista przedmiotów do kupienia, w formie nienumerowanej listy podzielonej na kategorie. Zwróć uwagę żeby uwzględnić wszystkie wspomniane w komunikacie pozycje
+- content: lista przedmiotów do kupienia, w formie nienumerowanej listy podzielonej na kategorie, zgodnie z tym jak podzielone są produkty w supermarketach.
+  Zwróć uwagę żeby uwzględnić wszystkie wspomniane w komunikacie pozycje. Jeśli pojawiają się dodatkowe informacje, takie jak ilość, marka, rodzaj czy warunki kiedy należy kupić
+  (na przykład, "jeśli będzie długi termin ważności"), uwzględnij je w opisie pozycji.s
 Dla events:
 - title: tytuł wydarzenia
 - description: opis wydarzenia
@@ -47,7 +50,7 @@ Przykład odpowiedzi:
     ],
     shopping_lists: [
         {{
-            "content": "Nabiał\n - Mleko\n - Jogurt naturalny\n - Jajka\nOwoce\n - Jabłka\n - Banany\n - Pomarańcze"
+            "content": "Nabiał\n - Mleko (jeśli będzie długi termin ważności)\n - Jogurt naturalny marki Pilos\n - Jajka Ligol\nOwoce\n - Jabłka\n - Banany\n - Pomarańcze"
         }}
     ],
     events: [
