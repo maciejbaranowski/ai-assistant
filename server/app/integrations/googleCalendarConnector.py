@@ -20,16 +20,19 @@ def create_calendar_event(data_item):
             'error': 'Calendar tool not initialized'
         }
     
-    result_string = createCalendarEventTool.invoke(
-        {
-            "calendar_id": CALENDAR_ID,
-            "summary": data_item.get("title", "No Title"),
-            "start_datetime": data_item.get("start_datetime"),
-            "end_datetime": data_item.get("end_datetime"),
-            "timezone": "Europe/Warsaw",
-            "description": data_item.get("description", "No Description")
-        }
-    )
+    event_payload = {
+        "calendar_id": CALENDAR_ID,
+        "summary": data_item.get("title", "No Title"),
+        "start_datetime": data_item.get("start_datetime"),
+        "end_datetime": data_item.get("end_datetime"),
+        "timezone": "Europe/Warsaw",
+        "description": data_item.get("description", "No Description")
+    }
+
+    if data_item.get("recurrence"):
+        event_payload["recurrence"] = data_item["recurrence"]
+
+    result_string = createCalendarEventTool.invoke(event_payload)
     
     # Extract URL using regex
     match = re.search(r'https?://[\S]+', result_string)

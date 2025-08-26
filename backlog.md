@@ -1,6 +1,5 @@
 # Tasks to do
 
- - Add support of recurring events
  - Add a cron to send daily summaries of calendar and event
  - Add vector searching of existing calendar events and allow modification and removal of events
  - Add questions about documents, calendar, tasks that can be answered as ntfy notifications (store as vector database?)

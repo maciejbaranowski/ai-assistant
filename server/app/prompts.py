@@ -31,6 +31,13 @@ Dla events:
 - description: opis wydarzenia
 - start_datetime: data i czas rozpoczęcia
 - end_datetime: data i czas zakończenia. Jeśli nie da się określić, załóż że wydarzenie trwa 1 godzinę.
+- recurrence: opcjonalne pole z regułą powtarzania, w formie obiektu JSON z następującymi kluczami:
+  - "FREQ": (wymagane) częstotliwość, np. "DAILY", "WEEKLY", "MONTHLY", "YEARLY".
+  - "INTERVAL": (opcjonalne) co ile FREQ, np. co 2 tygodnie. Domyślnie 1.
+  - "COUNT": (opcjonalne) ile razy ma się powtórzyć.
+  - "UNTIL": (opcjonalne) do kiedy ma się powtarzać, format "YYYYMMDD".
+  - "BYDAY": (opcjonalne) w które dni tygodnia, np. "MO,TU" dla poniedziałków i wtorków.
+  Użyj COUNT albo UNTIL, nie obu naraz.
 
 Bierz pod uwagę że dziś jest {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, wszystkie wydarzenia powinny być w przyszłości, nie mogą być w przeszłości.
 Przykład odpowiedzi:
@@ -61,10 +68,16 @@ Przykład odpowiedzi:
             "end_datetime": "2025-09-11 13:00:00"
         }},
         {{
-            "title": "Zadanie do wykonania",
-            "description": "Przygotowanie raportu",
-            "start_datetime": "2025-09-11 15:00:00",
-            "end_datetime": "2025-09-11 16:00:00"
+            "title": "Cotygodniowe zebranie",
+            "description": "Podsumowanie tygodnia, powtarza się 10 razy",
+            "start_datetime": "2025-09-12 09:00:00",
+            "end_datetime": "2025-09-12 10:00:00",
+            "recurrence": {{
+                "FREQ": "WEEKLY",
+                "INTERVAL": 1,
+                "COUNT": 10,
+                "BYDAY": "FR"
+            }}
         }}
     ]
 }}
