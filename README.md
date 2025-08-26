@@ -93,3 +93,29 @@ Accepts a `3gpp` audio file as the raw request body. The server transcribes the 
 **Headers:**
 - `x-auth`: Your secret auth token.
 - `Content-Type`: `audio/3gpp`
+
+## Linux Client (`linuxClient/`)
+
+This project includes a simple graphical client for Linux to interact with the assistant backend. It provides a text input field to send commands to the server and displays the JSON response.
+
+### Building the Client
+
+The client is a Python application using Tkinter. It can be built into a standalone executable using the provided build script.
+
+1.  **Navigate to the `linuxClient` directory:**
+    ```bash
+    cd linuxClient/
+    ```
+
+2.  **Run the build script:**
+    ```bash
+    ./build.sh
+    ```
+    The script will:
+    -   Create a Python virtual environment.
+    -   Install dependencies.
+    -   Read the `AUTH_TOKEN_SECRET` from the `server/.env` file and inject it into the client code.
+    -   Use `pyinstaller` to create a standalone binary.
+
+3.  **Run the client:**
+    The executable will be located in the `linuxClient/dist/` directory.

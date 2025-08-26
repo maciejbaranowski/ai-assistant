@@ -1,6 +1,5 @@
 # Tasks to do
 
- - Create simple GUI for PC to trigger text-command endpoint
  - Add support of recurring events
  - Add a cron to send daily summaries of calendar and event
  - Add vector searching of existing calendar events and allow modification and removal of events
