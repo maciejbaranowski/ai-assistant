@@ -30,6 +30,10 @@ class GoogleAuthManager:
                     creds.refresh(Request())
                 except Exception as e:
                     print(f"Token refresh failed: {e}")
+                    if 'invalid_grant' in str(e):
+                        print("Refresh token is invalid. Deleting token file to force re-authentication.")
+                        if os.path.exists(self.token_path):
+                            os.remove(self.token_path)
                     creds = None
             
             if not creds:
