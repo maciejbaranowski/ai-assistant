@@ -12,7 +12,7 @@ def invoke_data_extraction_prompt(message: str):
     logging.debug("Invoking data extraction prompt.")
     return gemini.invoke(
         f"""
-Przeanalizuj wiadomość i zwróć informacje zawarte w treści w ustrukturyzowany sposób wyłącznie w formacie JSON, w formie rekordu z polami: tasks, events, notes, shopping_lists.
+Przeanalizuj wiadomość i zwróć informacje zawarte w treści w ustrukturyzowany sposób wyłącznie w formacie JSON, uważając by nie dodawać niedozwolonych znaków nowej linii, w formie rekordu z polami: tasks, events, notes, shopping_lists.
 Każdy z tych rekordów powinien być listą obiektów, gdzie każdy obiekt zawiera następujące pola:
 Dla tasks:
 - title: tytuł zadania
