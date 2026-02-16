@@ -8,8 +8,34 @@ load_dotenv()
 from .processing import process_text_and_get_response
 from .audio import process_audio
 from .auth import verify_token
+from .integrations.ntfyConnector import send_ntfy_notification as send_notification
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+class CustomActionHandler(logging.Handler):
+    def emit(self, record):
+        if record.levelno > logging.DEBUG:
+            try:
+                log_message = self.format(record)
+                send_notification(log_message)
+            except Exception as e:
+                # We print the error directly to avoid a potential infinite loop
+                # if the error logging itself triggers this handler again.
+                print(f"Failed to send ntfy notification: {e}")
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Prevent adding handlers multiple times, e.g., during hot-reloads
+if not logger.handlers:
+    # 1. Handler for console output (replicates original basicConfig behavior)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # 2. Handler for executing custom code
+    custom_handler = CustomActionHandler()
+    custom_handler.setFormatter(formatter)
+    logger.addHandler(custom_handler)
 
 
 app = FastAPI()
